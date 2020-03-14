@@ -1,11 +1,12 @@
 import express from "express";
 import assets from "./routes/assets";
-import all from "./routes/all";
+import all, { middlewares } from "./routes/all";
 import Loadable from "react-loadable";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 
 import proxy from "./proxy";
+import phoenix from "./helpers/phoenix";
 
 // getting PORT from `.env` file in root directory
 const PORT = process.env.PORT;
@@ -13,6 +14,7 @@ const BASEPATH = process.env.BASEPATH;
 const app = express();
 
 app.use(cookieParser());
+app.use(phoenix());
 
 const morganLogFormat = process.env.DEBUG_MODE ? "combined" : "tiny";
 
@@ -44,7 +46,7 @@ app.use(assetsPath, assets);
 app.use(proxy);
 
 // handle other routes
-app.get("/*", all);
+app.get("/*", Object.values(middlewares), all);
 
 Loadable.preloadAll().then(() => {
   app.listen(PORT, () => {

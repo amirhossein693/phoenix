@@ -3,66 +3,44 @@ import ReactDOM from "react-dom";
 import { BrowserRouter } from "react-router-dom";
 import Loadable from "react-loadable";
 import App from "../app";
-import { Provider } from "react-redux";
-import createStore from "../store";
-import { createUser } from "../modules/membership";
-import { createLocale } from "../modules/localization";
-import rootSaga from "../code/redux/root_saga";
-import isProduction from "../modules/utils/is_production";
-import { checkUser } from "../code/modules/membership";
-import { env } from "../code/configs";
-import { createAPI } from "../modules/api_wrapper";
-import Cookies from "js-cookie";
 import { calculateLocale } from "../modules/localization/check_locale";
 import { changeLocale } from "../modules/localization/change_locale";
+import { promises } from "../modules/get_configs";
 
 const root = document.querySelector("#root");
 
-// get initial state from server and use it for creating redux store
-const store = createStore({ initState: window.__SERVER_STATES__ || {} });
+// const localeCode = calculateLocale();
 
-const token = Cookies.get(env.APP_TOKEN);
-createAPI({ token });
+// const locale = createLocale({ localeCode });
+// if (!isProduction) {
+//   changeLocale({ locale });
+// }
+const phoenix = {
+  version: 1,
+  App: () => (
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  ),
+  env: {
+    APP_NAME: process.env.APP_NAME,
+    BASEPATH: process.env.BASEPATH,
+    APP_API_BASE: process.env.APP_API_BASE,
+    APP_TOKEN: process.env.APP_TOKEN,
+    DEFAULT_LOCALE: process.env.DEFAULT_LOCALE,
+    NODE_ENV: process.env.NODE_ENV
+  }
+};
 
-let theUser;
-if (isProduction) {
-  // in production we have SSR
-  theUser = createUser({ initContext: window.__CONTEXT__ || null });
-} else {
-  theUser = createUser({
-    token,
-    checkUser
-  });
-}
+console.log("start", phoenix.App);
 
-const localeCode = calculateLocale();
+const plugins = promises.map(promise => promise(phoenix));
+plugins.map(plugin => plugin());
 
-const locale = createLocale({ localeCode });
-if (!isProduction) {
-  changeLocale({ locale });
-}
+const renderMethod =
+  process.env.NODE_ENV === "production" ? ReactDOM.hydrate : ReactDOM.render;
 
-// we need to start sagas outside the Redux middleware environment
-// because of running necessary sagas for pre-fetching data for server side rendering on server app
-store.runSaga(rootSaga);
-
-// in development mode we are not using server side rendering
-// because using ReactDom.hydrate generates a different DOM from what we produced in our SSR,
-// thus react gives us a warning because of that.
-const renderMethod = isProduction ? ReactDOM.hydrate : ReactDOM.render;
-theUser.getUser().then(user => {
-  Loadable.preloadReady().then(() => {
-    renderMethod(
-      <Provider store={store}>
-        <BrowserRouter>
-          <App
-            user={user && user.data}
-            userContext={theUser && theUser}
-            locale={locale}
-          />
-        </BrowserRouter>
-      </Provider>,
-      root
-    );
-  });
+Loadable.preloadReady().then(() => {
+  const { App } = phoenix;
+  renderMethod(<App />, root);
 });

@@ -1,27 +1,19 @@
 const path = require('path');
-const fs = require('fs');
+const webpack = require('webpack'); 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const isProduction = process.env.NODE_ENV === 'production';
-const dotenvPath = isProduction ? './.env' : './.env.development';
-const publicPath = require('./modules/utils/webpack/public_path');
-try {
-  if (fs.existsSync(path.resolve(__dirname, dotenvPath))) {
-    console.log(`${dotenvPath} loaded`)
-  } else {
-    console.error('');
-    console.error(`${dotenvPath} does not exist`);
-    console.error(`Please make a copy from .env.default and set the correct data`);
-    console.error('');
-    process.exit(1);
-  }
-} catch(err) {
-  console.error(err);
-  process.exit(1);
-}
-const dotenv = require('dotenv');
-const env = dotenv.config({
-  path: dotenvPath
-}).parsed;
+const publicPath = require('./utils/public_path');
+const { env, isProduction } = require('./utils/env');
+const proxyList = require("../code/configs/proxy");
+
+const proxy = {};
+proxyList.map(record => {
+  proxy[record.path] = {
+    target: record.target,
+    changeOrigin: true,
+    pathRewrite: { [`^${record.path}`]: "" },
+    logLevel: 'debug'
+  };
+});
 
 module.exports = {
   entry: './client/index.js',
@@ -29,23 +21,27 @@ module.exports = {
     filename: isProduction ? 'assets/main.[contentHash].js' : 'assets/main.js',
     chunkFilename: 
     isProduction ? 'assets/[name].[contentHash].js' : 'assets/[name].js',
-    path: path.resolve(__dirname, 'dist'),
-    publicPath
+    path: path.resolve(__dirname, '../dist'),
+    publicPath: publicPath(env)
   },
   devServer: {
     port: env.PORT,
     historyApiFallback: {
-      index: publicPath
+      index: publicPath(env)
     },
     compress: true,
     open: true,
-    publicPath
+    publicPath: publicPath(env),
+    proxy
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: path.resolve(__dirname, 'view/index.html'),
+      template: path.resolve(__dirname, '../view/index.html'),
       inject: true,
       title: env.APP_NAME
+    }),
+    new webpack.DefinePlugin({
+      'process.env': JSON.stringify({...process.env, ...env})
     })
   ],
   module: {

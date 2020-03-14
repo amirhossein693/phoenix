@@ -1,9 +1,11 @@
 const path = require('path');
+const webpack = require('webpack'); 
 const merge = require('webpack-merge');
-const codeServerConfig = require('./code/configs/webpack/webpack.server');
+const codeServerConfig = require('../code/configs/webpack/webpack.server');
 const nodeExternals = require('webpack-node-externals');
 const CleanWebpackPlugin = require('clean-webpack-plugin/dist/clean-webpack-plugin');
-const basePath = require('./modules/utils/webpack/base_path');
+const basePath = require('./utils/base_path');
+const { env } = require('./utils/env');
 
 const config = {
   mode: 'production',
@@ -16,7 +18,10 @@ const config = {
     chunkFilename: '[name].[contentHash].js'
   },
   plugins: [
-    new CleanWebpackPlugin()
+    new CleanWebpackPlugin(),
+    new webpack.DefinePlugin({
+      'process.env': JSON.stringify({...process.env, ...env})
+    })
   ],
   module: {
     rules: [
@@ -62,29 +67,29 @@ const config = {
           }
         ]
       },
-      {
-        test: /\.(sa|sc|c)ss$/,
-        use: [
-          // isomorphic-style-loader
-          {
-            loader: 'isomorphic-style-loader'
-          },
-          // css-loader
-          {
-            loader: 'css-loader',
-            options: {
-              modules: true,
-              camelCase: true,
-              importLoaders: true,
-              localIdentName: '[name]__[local]__[hash:base64:5]'
-            }
-          },
-          // sass-loader
-          {
-            loader: 'sass-loader'
-          }
-        ]
-      },
+      // {
+      //   test: /\.(sa|sc|c)ss$/,
+      //   use: [
+      //     // isomorphic-style-loader
+      //     {
+      //       loader: 'isomorphic-style-loader'
+      //     },
+      //     // css-loader
+      //     {
+      //       loader: 'css-loader',
+      //       options: {
+      //         modules: true,
+      //         camelCase: true,
+      //         importLoaders: true,
+      //         localIdentName: '[name]__[local]__[hash:base64:5]'
+      //       }
+      //     },
+      //     // sass-loader
+      //     {
+      //       loader: 'sass-loader'
+      //     }
+      //   ]
+      // },
       {
         test: /\.(png|svg|jpg|gif)$/,
         use: [
@@ -92,7 +97,7 @@ const config = {
             loader: 'file-loader',
             options: {
               outputPath: '../dist/assets',
-              publicPath: basePath
+              publicPath: basePath(env)
             }
           }
         ]
@@ -104,7 +109,7 @@ const config = {
             loader: 'file-loader',
             options: {
               outputPath: '../dist/assets',
-              publicPath: basePath
+              publicPath: basePath(env)
             }
           }
         ]

@@ -8,14 +8,14 @@ import RoutersComponent from "./router";
 // you can add some global styles in `code/assets/styles/index.scss`
 import "../code/assets/styles/index.scss";
 
-import UserContext from "../modules/user_context";
+// import UserContext from "../modules/user_context";
 import { createLocale, LocaleContext } from "../modules/localization";
 import { withRouter } from "react-router-dom";
 
 const App = ({ user, userContext, history, locale }) => {
-  const [userData, setUserData] = useState(transformer(user));
   const [theLocale, setLocale] = useState(locale);
-  const [userContextData, setUserContextData] = useState(userContext);
+  // const [userData, setUserData] = useState(transformer(user));
+  // const [userContextData, setUserContextData] = useState(userContext);
   return (
     <LocaleContext.Provider
       value={{
@@ -27,7 +27,7 @@ const App = ({ user, userContext, history, locale }) => {
         }
       }}
     >
-      <UserContext.Provider
+      {/* <UserContext.Provider
         value={{
           context: userContextData,
           user: userData,
@@ -36,9 +36,9 @@ const App = ({ user, userContext, history, locale }) => {
             setUserContextData(context);
           }
         }}
-      >
-        <RoutersComponent />
-      </UserContext.Provider>
+      > */}
+      <RoutersComponent />
+      {/* </UserContext.Provider> */}
     </LocaleContext.Provider>
   );
 };
