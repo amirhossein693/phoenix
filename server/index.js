@@ -1,5 +1,6 @@
 import express from "express";
 import assets from "./routes/assets";
+import customServerApp from "../code/server/app";
 import all from "./routes/all";
 import Loadable from "react-loadable";
 import cookieParser from "cookie-parser";
@@ -18,7 +19,7 @@ const morganLogFormat = process.env.DEBUG_MODE ? "combined" : "tiny";
 
 app.use(
   morgan(morganLogFormat, {
-    skip: function(req, res) {
+    skip: function (req, res) {
       return res.statusCode < 400;
     },
     stream: process.stderr
@@ -27,7 +28,7 @@ app.use(
 
 app.use(
   morgan(morganLogFormat, {
-    skip: function(req, res) {
+    skip: function (req, res) {
       return res.statusCode >= 400;
     },
     stream: process.stdout
@@ -41,6 +42,10 @@ app.use(express.static("./code/public"));
 const assetsPath = BASEPATH !== "" ? `/${BASEPATH}/assets` : `/assets`;
 app.use(assetsPath, assets);
 
+// handle custom server routes
+app.use(customServerApp);
+
+// handle server proxy
 app.use(proxy);
 
 // handle other routes
